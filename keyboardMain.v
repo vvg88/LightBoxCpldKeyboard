@@ -2,10 +2,10 @@
 
 module keyboardMain
 (
-	//input  wire SEL,
+	input  wire SEL,
 	input  wire SCK,
-	//input  wire SDI,
-	//output wire SDO,
+	input  wire SDI,
+	output wire SDO,
 	
 	input wire [22:0] KEY,
 	
@@ -52,6 +52,10 @@ module keyboardMain
 	//output wire LED_G
 );
 
+localparam FIFO_EVENT_WIDTH = 8;
+localparam COMM_DATA_WIDTH = 8;
+localparam COMM_ADDR_WIDTH = 3;
+
 wire keyClk;
 wire KeyBoardEvent;
 
@@ -74,6 +78,19 @@ KeyboardReader KeyBoardReadr
 	
 	.keyEventReady(KeyBoardEvent),
 	.keyEvent(KeyBoardEvCode)
+);
+
+wire [FIFO_EVENT_WIDTH - 1:0] FifoEvent;
+wire FifoReadEn;
+wire [COMM_DATA_WIDTH - 1:0] CommDat;
+wire [COMM_ADDR_WIDTH - 1:0] CommAddr;
+wire CommReady;
+
+Spi #( .REPLY_WIDTH(FIFO_EVENT_WIDTH), .COMM_WIDTH(COMM_DATA_WIDTH), .ADR_WIDTH(COMM_ADDR_WIDTH)) SpiMod
+(
+	.rst(INT), .sdi(SDI), .sck(SCK), .sel(SEL),
+	.replyData(FifoEvent), .replyEn(FifoReadEn), .sdo(SDO),
+	.commData(CommDat), .commAdr(CommAddr), .commReady(CommReady)
 );
 
 // Делитель частоты для частоты сканирования клавиатуры
