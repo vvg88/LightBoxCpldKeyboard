@@ -20,7 +20,7 @@
 ## PROGRAM "Quartus Prime"
 ## VERSION "Version 15.1.0 Build 185 10/21/2015 SJ Lite Edition"
 
-## DATE    "Wed Mar 23 10:56:24 2016"
+## DATE    "Thu Mar 24 09:22:08 2016"
 
 ##
 ## DEVICE  "EPM570T100C5"
@@ -39,7 +39,7 @@ set_time_format -unit ns -decimal_places 3
 # Create Clock
 #**************************************************************
 
-create_clock -name {SCK} -period 41.667 -waveform { 0.000 20.833 } 
+create_clock -name {SCK} -period 20.833 -waveform { 0.000 10.416 } 
 
 
 #**************************************************************
