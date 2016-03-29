@@ -133,3 +133,4 @@ set_global_assignment -name GENERATE_SVF_FILE ON
 set_location_assignment PIN_36 -to EXT
 set_location_assignment PIN_38 -to INT
 set_global_assignment -name VERILOG_FILE Spi.v
+set_global_assignment -name VERILOG_FILE Display.v
