@@ -7,40 +7,41 @@ module EncoderReader
 	input wire encLineB,				// Сигнал линии В
 	input wire [5:0] encNum,		// Номер энкодера
 	
-	output reg [1:0] encRotEvent,	// Флаг события поворота энкодера
+	output wire/*reg*/ [1:0] encRotEvent,	// Флаг события поворота энкодера
 	output wire [5:0] encCode 		// Код события
 );
 
-assign encCode = (encRotDir) ? (encNum + 6'h1) : (encNum);
+assign encCode = encRotDir ? (encNum + 6'h1) : (encNum);
+assign encRotEvent = encRotEv ? encRotEv : 2'bzz;
 
-wire encEventA;		// Флаг события с линии А
-wire encEventB;		// Флаг события с линии В
-reg encRotDir;			// Признак направления поворота экодера
-reg evntRiseDetctFlg;// 
+wire encEventA;			// Флаг события с линии А
+wire encEventB;			// Флаг события с линии В
+reg encRotDir;				// Признак направления поворота экодера
+reg encRotEv;
 
 // Опрос линий энкодера
 EncLineReader EncLineRdA ( .clk(clk), .rst(rst), .encLine(encLineA), .encEvent(encEventA));
 EncLineReader EncLineRdB ( .clk(clk), .rst(rst), .encLine(encLineB), .encEvent(encEventB));
 
-always @(encEventA or encEventB)  begin
+always @(posedge clk) begin
 	
-	if (evntRiseDetctFlg & ~encEventA & ~encEventB) begin
-		encRotEvent <= 2'b00;
-		evntRiseDetctFlg <= 1'b0;
+	if (rst) begin
+		encRotEv <= 2'b00;		// Сбросить флаг
 	end
+	
 	else begin
-		if (encEventA & ~encEventB) begin		// Если фронт А,
-			encRotDir <= 0;							// то направление положительное
-			//encRotEvent <= 2'b11;					// установить флаг события
-		end
-		if (~encEventA & encEventB) begin		// Если фронт В,
-			encRotDir <= 1;							// то направление отрицательное
-			//encRotEvent <= 2'b11;					// установить флаг события
-		end
-		if (encEventA & encEventB) begin
-			evntRiseDetctFlg <= 1'b1;
-			encRotEvent <= 2'b11;					// установить флаг события
-		end
+		if (encEventA & ~encEventB) 		// Если фронт А,
+			encRotDir <= 0;					// то направление положительное
+		
+		if (~encEventA & encEventB)		// Если фронт В,
+			encRotDir <= 1;					// то направление отрицательное
+		
+		if (encEventA & encEventB)
+			encRotEv <= 2'b11;			// установить флаг события
+		
+		if (encRotEvent) 						// Сбросить флаг после его установки
+			encRotEv <= 2'b00;
+		
 	end
 end
 
@@ -64,7 +65,7 @@ reg fallFlag;				// Флаг спада на линии
 assign encEvent = riseFlag & fallFlag;		// Установить флаг события энкодера
 
 always @(posedge clk) begin
-	if (rst) begin					// Сброс состояния
+	if (rst) begin 							// Сброс состояния
 		newEncLineState <= 1;
 		chattCntr <= 0;
 		riseFlag <= 0;
@@ -84,17 +85,15 @@ always @(posedge clk) begin
 				end
 			end
 		end
-		else begin
+		else begin 		
 			if (chattCntr) begin							// Если линии неизменна и идет задержка
 				chattCntr = chattCntr + 4'h1;			// Инкрементировать задержку
 				if (chattCntr[3]) begin					// Если отсчитана задержка 3 мс
 					chattCntr <= 0;						// Обнулить задержку
-					if (newEncLineState) begin			// Определить новое состояние
+					if (newEncLineState)					// Определить новое состояние
 						riseFlag <= 1;						// Сохранить флаг фронта или спада
-					end
-					else begin
+					else
 						fallFlag <= 1;
-					end
 				end
 			end
 		end

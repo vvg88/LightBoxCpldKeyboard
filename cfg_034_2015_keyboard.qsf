@@ -53,50 +53,31 @@ set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (Verilog)"
 set_global_assignment -name EDA_OUTPUT_DATA_FORMAT "VERILOG HDL" -section_id eda_simulation
 set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "3.3-V LVTTL"
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "NO HEAT SINK WITH STILL AIR"
-set_location_assignment PIN_96 -to E0IN
-set_location_assignment PIN_97 -to E0OUT
-set_location_assignment PIN_86 -to E1IN
-set_location_assignment PIN_87 -to E1OUT
-set_location_assignment PIN_82 -to ENC0C
-set_location_assignment PIN_81 -to ENC0K
-set_location_assignment PIN_78 -to ENC0S
-set_location_assignment PIN_77 -to ENC1C
-set_location_assignment PIN_76 -to ENC1K
-set_location_assignment PIN_75 -to ENC1S
-set_location_assignment PIN_69 -to ENC2C
-set_location_assignment PIN_68 -to ENC2K
-set_location_assignment PIN_67 -to ENC2S
-set_location_assignment PIN_98 -to ENC3C
-set_location_assignment PIN_99 -to ENC3K
-set_location_assignment PIN_100 -to ENC3S
-set_location_assignment PIN_72 -to JOYA
-set_location_assignment PIN_71 -to JOYB
-set_location_assignment PIN_70 -to JOYC
-set_location_assignment PIN_73 -to JOYD
-set_location_assignment PIN_74 -to JOYE
-set_location_assignment PIN_55 -to KEY[0]
-set_location_assignment PIN_26 -to KEY[1]
-set_location_assignment PIN_30 -to KEY[2]
-set_location_assignment PIN_49 -to KEY[3]
-set_location_assignment PIN_28 -to KEY[4]
-set_location_assignment PIN_47 -to KEY[5]
-set_location_assignment PIN_53 -to KEY[6]
-set_location_assignment PIN_33 -to KEY[7]
-set_location_assignment PIN_50 -to KEY[8]
-set_location_assignment PIN_51 -to KEY[9]
-set_location_assignment PIN_34 -to KEY[10]
-set_location_assignment PIN_27 -to KEY[11]
-set_location_assignment PIN_29 -to KEY[13]
-set_location_assignment PIN_52 -to KEY[16]
-set_location_assignment PIN_48 -to KEY[21]
-set_location_assignment PIN_35 -to KEY[22]
-set_location_assignment PIN_56 -to KEY[12]
-set_location_assignment PIN_54 -to KEY[14]
-set_location_assignment PIN_83 -to KEY[15]
-set_location_assignment PIN_57 -to KEY[17]
-set_location_assignment PIN_58 -to KEY[18]
-set_location_assignment PIN_66 -to KEY[19]
-set_location_assignment PIN_61 -to KEY[20]
+set_location_assignment PIN_12 -to SCK
+set_location_assignment PIN_40 -to SDI
+set_location_assignment PIN_41 -to SDO
+set_location_assignment PIN_42 -to SEL
+set_global_assignment -name SDC_FILE cfg_034_2015_keyboard.sdc
+set_global_assignment -name VERILOG_FILE FreqDivider.v
+set_global_assignment -name VERILOG_FILE controlReg.v
+set_global_assignment -name VERILOG_FILE keyboardMain.v
+set_global_assignment -name VERILOG_FILE KeyboardReader.v
+set_global_assignment -name CDF_FILE output_files/Chain1.cdf
+set_global_assignment -name VERILOG_FILE EncoderReader.v
+set_global_assignment -name AUTO_RESTART_CONFIGURATION OFF
+set_global_assignment -name ENABLE_OCT_DONE OFF
+set_global_assignment -name ENABLE_CONFIGURATION_PINS OFF
+set_global_assignment -name ENABLE_BOOT_SEL_PIN OFF
+set_global_assignment -name USE_CONFIGURATION_DEVICE ON
+set_global_assignment -name GENERATE_SVF_FILE ON
+set_location_assignment PIN_38 -to INT
+set_global_assignment -name VERILOG_FILE Spi.v
+set_global_assignment -name VERILOG_FILE Display.v
+set_global_assignment -name VERILOG_FILE Fifo.v
+set_location_assignment PIN_95 -to TST[3]
+set_location_assignment PIN_92 -to TST[2]
+set_location_assignment PIN_91 -to TST[1]
+set_location_assignment PIN_89 -to TST[0]
 set_location_assignment PIN_21 -to LCD_BL
 set_location_assignment PIN_6 -to LCD_CS
 set_location_assignment PIN_2 -to LCD_D[0]
@@ -111,26 +92,71 @@ set_location_assignment PIN_20 -to LCD_RD
 set_location_assignment PIN_7 -to LCD_RES
 set_location_assignment PIN_19 -to LCD_RS
 set_location_assignment PIN_1 -to LCD_WR
-set_location_assignment PIN_12 -to SCK
-set_location_assignment PIN_41 -to SDI
-set_location_assignment PIN_40 -to SDO
-set_location_assignment PIN_42 -to SEL
 set_location_assignment PIN_84 -to LED_G
 set_location_assignment PIN_85 -to LED_R
-set_global_assignment -name SDC_FILE cfg_034_2015_keyboard.sdc
-set_global_assignment -name VERILOG_FILE FreqDivider.v
-set_global_assignment -name VERILOG_FILE controlReg.v
-set_global_assignment -name VERILOG_FILE keyboardMain.v
-set_global_assignment -name VERILOG_FILE KeyboardReader.v
-set_global_assignment -name CDF_FILE output_files/Chain1.cdf
-set_global_assignment -name VERILOG_FILE EncoderReader.v
-set_global_assignment -name AUTO_RESTART_CONFIGURATION OFF
-set_global_assignment -name ENABLE_OCT_DONE OFF
-set_global_assignment -name ENABLE_CONFIGURATION_PINS OFF
-set_global_assignment -name ENABLE_BOOT_SEL_PIN OFF
-set_global_assignment -name USE_CONFIGURATION_DEVICE ON
-set_global_assignment -name GENERATE_SVF_FILE ON
 set_location_assignment PIN_36 -to EXT
-set_location_assignment PIN_38 -to INT
-set_global_assignment -name VERILOG_FILE Spi.v
-set_global_assignment -name VERILOG_FILE Display.v
+set_global_assignment -name QIP_FILE intOsc.qip
+set_location_assignment PIN_81 -to ENC0K
+set_location_assignment PIN_76 -to ENC1K
+set_location_assignment PIN_68 -to ENC2K
+set_location_assignment PIN_99 -to ENC3K
+set_location_assignment PIN_72 -to JOYA
+set_location_assignment PIN_71 -to JOYB
+set_location_assignment PIN_70 -to JOYC
+set_location_assignment PIN_73 -to JOYD
+set_location_assignment PIN_74 -to JOYE
+set_location_assignment PIN_35 -to KEY[22]
+set_location_assignment PIN_48 -to KEY[21]
+set_location_assignment PIN_61 -to KEY[20]
+set_location_assignment PIN_66 -to KEY[19]
+set_location_assignment PIN_58 -to KEY[18]
+set_location_assignment PIN_57 -to KEY[17]
+set_location_assignment PIN_52 -to KEY[16]
+set_location_assignment PIN_83 -to KEY[15]
+set_location_assignment PIN_54 -to KEY[14]
+set_location_assignment PIN_29 -to KEY[13]
+set_location_assignment PIN_56 -to KEY[12]
+set_location_assignment PIN_27 -to KEY[11]
+set_location_assignment PIN_34 -to KEY[10]
+set_location_assignment PIN_51 -to KEY[9]
+set_location_assignment PIN_50 -to KEY[8]
+set_location_assignment PIN_33 -to KEY[7]
+set_location_assignment PIN_53 -to KEY[6]
+set_location_assignment PIN_47 -to KEY[5]
+set_location_assignment PIN_28 -to KEY[4]
+set_location_assignment PIN_49 -to KEY[3]
+set_location_assignment PIN_30 -to KEY[2]
+set_location_assignment PIN_26 -to KEY[1]
+set_location_assignment PIN_55 -to KEY[0]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ENC0K
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ENC1K
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ENC2K
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ENC3K
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to JOYA
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to JOYB
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to JOYC
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to JOYD
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to JOYE
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[22]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[21]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[20]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[19]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[18]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[17]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[16]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[15]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[14]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[13]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[12]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[11]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[10]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[9]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[8]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[7]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[6]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[5]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[4]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[3]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[2]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[1]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[0]

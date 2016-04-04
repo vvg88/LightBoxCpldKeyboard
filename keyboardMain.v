@@ -32,7 +32,7 @@ module keyboardMain
 	input wire JOYE,
 	
 	input wire INT,
-	//input wire EXT,
+	input wire EXT,
 	//
 	//input  wire E0IN,
 	//output wire E0OUT,
@@ -46,38 +46,37 @@ module keyboardMain
 	output wire LCD_WR,
 	output wire LCD_CS,
 	output wire LCD_RES,
-	output reg LCD_BL,
+	output wire LCD_BL,
 	
 	output wire LED_R,
-	output wire LED_G
+	output wire LED_G,
+	
+	output wire [3:0] TST
 );
 
 localparam FIFO_EVENT_WIDTH = 8;		// Разрядность кода события
 localparam COMM_DATA_WIDTH = 8;		// Разрядность шины данных команд
 localparam COMM_ADDR_WIDTH = 3;		// Разрядность шины адреса команд
 
-wire keyClk;				// Тактовая частота сканирования клавиатуры
-wire KeyBoardEvent;		// Флаг события от клавиатуры
-wire KeyBoardEvCode;		// Код события от клавиатуры
-
-initial begin
-	LCD_BL = 0;
-end
+wire keyClk;						// Тактовая частота сканирования клавиатуры
+wire KeyBoardEvent;				// Флаг события от клавиатуры
+wire [7:0] KeyBoardEvCode;		// Код события от клавиатуры
 
 // Модуль клавиатуры
-KeyboardReader KeyBoardReadr
+/*KeyboardReader KeyBoardReadr
 (
-	. clk(keyClk),
-	.rst(INT),
+	//.clk(keyClk),
+	.rst(EXT),
 	.keysState(KEY),
-	.joystKeys({JOYA, JOYB, JOYC, JOYD, JOYE}),
-	.encKeys({ENC0K, ENC1K, ENC2K, ENC3K}),
+	.joystKeys({JOYE, JOYD, JOYC, JOYB, JOYA}),
+	.encKeys({ENC3K, ENC2K, ENC1K, ENC0K}),
 	.encLinesA({ENC0S, ENC1S, ENC2S, ENC3S}),
 	.encLinesB({ENC0C, ENC1C, ENC2C, ENC3C}),
 	
+	.tstWire(TST[3]),
 	.keyEventReady(KeyBoardEvent),
 	.keyEvent(KeyBoardEvCode)
-);
+);*/
 
 wire [FIFO_EVENT_WIDTH - 1:0] FifoEvent;		// Код события
 wire FifoReadEn;										// Флаг разрешения чтения события FIFO
@@ -86,13 +85,13 @@ wire [COMM_ADDR_WIDTH - 1:0] CommAddr;			// Адрес команды
 wire CommReady;
 
 // Линия сигнала "Очистить FIFO"
-wire FifoClr;
-assign FifoClr = ((CommAddr == 1) && (CommDat == 0)) ? 1 : 0;
+/*wire FifoClr;
+assign FifoClr = ((CommAddr == 1) && (CommDat == 0)) ? 1 : 0;*/
 
 // Модуль интерфейса SPI
 Spi #( .REPLY_WIDTH(FIFO_EVENT_WIDTH), .COMM_WIDTH(COMM_DATA_WIDTH), .ADR_WIDTH(COMM_ADDR_WIDTH)) SpiMod
 (
-	.rst(INT), .sdi(SDI), .sck(SCK), .sel(SEL),
+	.rst(EXT), .sdi(SDI), .sck(SCK), .sel(SEL),
 	.replyData(FifoEvent), .replyEn(FifoReadEn), .sdo(SDO),
 	.commData(CommDat), .commAdr(CommAddr), .commReady(CommReady)
 );
@@ -100,22 +99,28 @@ Spi #( .REPLY_WIDTH(FIFO_EVENT_WIDTH), .COMM_WIDTH(COMM_DATA_WIDTH), .ADR_WIDTH(
 // Модуль дисплея
 Display #( .DATA_W(COMM_DATA_WIDTH), .ADDR_W(COMM_ADDR_WIDTH)) MyDisp
 (
-	.rst(INT), .commData(CommDat), .commAddr(CommAddr), .wrEn(CommReady),
+	.clk(SCK), .rst(EXT), .commData(CommDat), .commAddr(CommAddr), .wrEn(CommReady),
 	.dispData(LCD_D), .lcdRs(LCD_RS), .lcdWr(LCD_WR), .lcdRd(LCD_RD), .lcdCs(LCD_CS)
 );
 
 // Внешние линии
-wire [7:0] ExtLines;
-assign ExtLines = {4'h0, LED_R, LED_G, LCD_BL, LCD_RES};
+//wire [7:0] ExtLines;
+//assign ExtLines = {4'h0, LED_R, LED_G, LCD_BL, LCD_RES};
 
 // Регистр управления внешними дискретными сигналами
-controlRegister #( .DATA_W(COMM_DATA_WIDTH), .ADDR_W(COMM_ADDR_WIDTH), .ADDR(4'h04)) ControlReg4
+controlRegister #( .DATA_W(4), .ADDR_W(COMM_ADDR_WIDTH), .ADDR(4'h04)) ControlReg4
 (
-	.rst(INT), .clk(SCK), .wrEnable(CommReady),
-	.dBus(CommDat), .aBus(CommAddr), .out(ExtLines)
+	.rst(EXT), .clk(SCK), .wrEnable(CommReady),
+	.dBus(CommDat[3:0]), .aBus(CommAddr), .out({LED_R, LED_G, LCD_BL, LCD_RES})
 );
 
 // Делитель частоты для частоты сканирования клавиатуры
-FreqDivider #( .DIVIDE_COEFF(48000), .CNTR_WIDTH(16)) FreqDevdr ( .enable(1), .clk(SCK), .rst(INT), .clk_out(keyClk));
+FreqDivider #( .DIVIDE_COEFF(5500), .CNTR_WIDTH(13)) FreqDevdr ( .enable(1), .clk(kbClk), .rst(EXT), .clk_out(keyClkScan));
+
+wire kbClk;
+wire keyClkScan;
+intOsc InternOsc ( .oscena(1'b1), .osc(kbClk));
+
+assign TST = {keyClkScan, 1'b0, 1'b0, 1'b0};
 
 endmodule
