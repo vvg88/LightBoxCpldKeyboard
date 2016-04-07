@@ -63,7 +63,7 @@ wire KeyBoardEvent;				// Флаг события от клавиатуры
 wire [7:0] KeyBoardEvCode;		// Код события от клавиатуры
 
 // Модуль клавиатуры
-/*KeyboardReader KeyBoardReadr
+KeyboardReader KeyBoardReadr
 (
 	//.clk(keyClk),
 	.rst(EXT),
@@ -73,10 +73,10 @@ wire [7:0] KeyBoardEvCode;		// Код события от клавиатуры
 	.encLinesA({ENC0S, ENC1S, ENC2S, ENC3S}),
 	.encLinesB({ENC0C, ENC1C, ENC2C, ENC3C}),
 	
-	.tstWire(TST[3]),
+	///.tstWire(TST),
 	.keyEventReady(KeyBoardEvent),
 	.keyEvent(KeyBoardEvCode)
-);*/
+);
 
 wire [FIFO_EVENT_WIDTH - 1:0] FifoEvent;		// Код события
 wire FifoReadEn;										// Флаг разрешения чтения события FIFO
@@ -85,14 +85,26 @@ wire [COMM_ADDR_WIDTH - 1:0] CommAddr;			// Адрес команды
 wire CommReady;
 
 // Линия сигнала "Очистить FIFO"
-/*wire FifoClr;
-assign FifoClr = ((CommAddr == 1) && (CommDat == 0)) ? 1 : 0;*/
+reg FifoClr;
+always @(posedge CommReady) begin
+	if ((CommAddr == 1) && (CommDat == 0))
+		FifoClr = 1'b1;
+	else
+		FifoClr = 1'b0;
+end
+//assign FifoClr = ((CommAddr == 1) && (CommDat == 0)) ? 1 : 0;
+
+Fifo #( .FIFO_EVENT_WIDTH(8), .FIFO_CAP_WIDTH(3), .FIFO_CAPACITY(8)) MyFifo
+(
+	.clk(SCK), .rst(EXT), .FifoClr(FifoClr), .FifoInput(KeyBoardEvCode),
+	.FifoWr(KeyBoardEvent), .FifoRd(FifoReadEn), .tst(TST), .FifoOutput(FifoEvent)
+);
 
 // Модуль интерфейса SPI
 Spi #( .REPLY_WIDTH(FIFO_EVENT_WIDTH), .COMM_WIDTH(COMM_DATA_WIDTH), .ADR_WIDTH(COMM_ADDR_WIDTH)) SpiMod
 (
 	.rst(EXT), .sdi(SDI), .sck(SCK), .sel(SEL),
-	.replyData(FifoEvent), .replyEn(FifoReadEn), .sdo(SDO),
+	.replyData(FifoEvent/*8'h0F*/), .replyEn(FifoReadEn), .sdo(SDO),
 	.commData(CommDat), .commAdr(CommAddr), .commReady(CommReady)
 );
 
@@ -115,12 +127,12 @@ controlRegister #( .DATA_W(4), .ADDR_W(COMM_ADDR_WIDTH), .ADDR(4'h04)) ControlRe
 );
 
 // Делитель частоты для частоты сканирования клавиатуры
-FreqDivider #( .DIVIDE_COEFF(5500), .CNTR_WIDTH(13)) FreqDevdr ( .enable(1), .clk(kbClk), .rst(EXT), .clk_out(keyClkScan));
-
+/*FreqDivider #( .DIVIDE_COEFF(5500), .CNTR_WIDTH(13)) FreqDevdr ( .enable(1), .clk(kbClk), .rst(EXT), .clk_out(keyClkScan));
 wire kbClk;
 wire keyClkScan;
-intOsc InternOsc ( .oscena(1'b1), .osc(kbClk));
+intOsc InternOsc ( .oscena(1'b1), .osc(kbClk));*/
 
-assign TST = {keyClkScan, 1'b0, 1'b0, 1'b0};
+//assign TST = {KeyBoardEvent, 1'b0, 1'b0, 1'b0};
+//assign TST[3] = KeyBoardEvent;
 
 endmodule

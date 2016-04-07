@@ -13,20 +13,20 @@ module FreqDivider
 
 reg [CNTR_WIDTH-1:0] cntr;
 
-initial begin
+/*initial begin
 	cntr = 8'b0;
 	clk_out = 1'b1;
-end
+end*/
 
-always @(clk) begin
+always @(posedge clk or posedge rst) begin
 	if (rst) begin
-		cntr <= 8'b0;
+		cntr <= {CNTR_WIDTH{1'b0}};
 		clk_out <= 1'b1;
 	end
 	else begin
 		if (enable) begin
 			cntr = cntr + 1;
-			if (cntr == DIVIDE_COEFF) begin
+			if (cntr == DIVIDE_COEFF / 2) begin
 				clk_out <= ~clk_out;
 				cntr <= 0;
 			end	

@@ -9,7 +9,7 @@ module KeyboardReader
 	input wire [3:0] encLinesA,
 	input wire [3:0] encLinesB,
 	
-	output wire tstWire,
+	///output wire [3:0] tstWire,
 	output wire keyEventReady,		// Флаг события нажатия
 	output wire [7:0] keyEvent		// Код события (клавиши)
 );
@@ -17,23 +17,24 @@ module KeyboardReader
 wire kbClk;
 wire keyClkScan;
 
-reg [31:0] keysNewState;
-reg [31:0] keysPrevState;
-reg [32:0] keyBrdState;
-reg [32:0] keyBrdPrevState;
-reg [7:0] keyCode;
-reg keyEvRdy;
+reg [31:0] keysNewState;		// Новое состояние кнопок
+reg [31:0] keysPrevState;		// Состояние кнопок на предыдущем такте
+reg [32:0] keyBrdState;			// Текущее состояние клавиатуры
+reg [32:0] keyBrdPrevState;	// Предыдущее состояние клавиатуры
+reg [7:0] keyCode;				// Код нажатой клавиши
+reg keyEvRdy;						// Флаг события от кнопок
 reg encEvRdy;
 
 assign keyEventReady = keyEvRdy;
 assign keyEvent = keyCode;
 ///
-assign tstWire = kbClk;
+///assign tstWire = {waitCntEn, keyEvRdy, keyCode[7], keyCode[6]};
 
-reg waitCntEn;
-reg [2:0] waitCntr;
-reg keysScanEn;
+reg waitCntEn;			// Разрешение счетчика антидребезга
+reg [2:0] waitCntr;	// Счетчик антидребезга
+reg keysScanEn;		// Флаг резрешения сканирования состояния кнопок
 
+// Считывание состояния кнопок
 always @(posedge keyClkScan or posedge rst) begin
 	if (rst) begin
 		waitCntr <= 3'h0;
@@ -53,20 +54,28 @@ always @(posedge keyClkScan or posedge rst) begin
 		end
 		else begin
 			waitCntr <= (waitCntEn) ? waitCntr + 3'h1 : 3'h0;
-			waitCntEn <= (&waitCntr) ? 1'b0 : 1'b1;
+			waitCntEn <= (waitCntEn & (&waitCntr)) ? 1'b0 : waitCntEn;
 			keysScanEn <= (&waitCntr) ? 1'b1 : 1'b0;
 		end
 	end
 end
 
-always @(posedge rst or posedge keysScanEn) begin
+reg newKbdLoad; // Флаг однократной загрузки нового состояния кнопок
+always @(posedge kbClk or posedge rst or posedge keysScanEn) begin
 	if (rst) begin
 		keyBrdState <= 33'h1FFFFFFFF;
 		keyBrdPrevState <= 33'h1FFFFFFFF;
+		newKbdLoad <= 1'b1;
 	end
 	else begin
 		if (keysScanEn) begin
-			keyBrdState[31:0] <= keysNewState;
+			if (newKbdLoad) begin
+				keyBrdState[31:0] <= keysNewState;
+				newKbdLoad <= 1'b0;
+			end
+		end
+		else begin
+			newKbdLoad <= 1'b1;
 			keyBrdPrevState <= keyBrdState;
 		end
 	end
@@ -74,10 +83,9 @@ end
 
 
 reg [5:0] scanIndx;
-always @(posedge kbClk or posedge rst or posedge keysScanEn) begin
+// Сканирование изменившегося состояния кнопок
+always @(posedge kbClk or posedge rst) begin
 	if (rst) begin
-		//keyBrdState <= 30'h3FFFFFFF;
-		//keyBrdPrevState <= 30'h3FFFFFFF;
 		scanIndx <= 6'h0;
 		keyEvRdy <= 1'b0;
 	end
@@ -104,58 +112,48 @@ always @(posedge kbClk or posedge rst or posedge keysScanEn) begin
 	end
 end
 
+reg [7:0] encLinesNewSt;
+reg [7:0] encLinesPrevSt;
+
+reg encCntEn;
+reg encScanEn;		
+reg [1:0] encCntr;
+
+always @(posedge keyClkScan or posedge rst) begin
+	if (rst) begin
+		encCntr <= 2'h0;
+		encCntEn <= 1'b0;
+		encScanEn <= 1'b0;
+		encLinesNewSt <= 8'hFF;
+		encLinesPrevSt <= 8'hFF;
+	end
+	else begin
+		encLinesNewSt <= {encLinesB[3], encLinesA[3], encLinesB[2], encLinesA[2], encLinesB[1], encLinesA[1], encLinesB[0], encLinesA[0]};
+		encLinesPrevSt <= encLinesNewSt;
+		if (encLinesNewSt ^ encLinesPrevSt) begin
+			if (encCntEn)
+				encCntr <= 3'h0;
+			else
+				encCntEn <= 1'b1;
+		end
+		else begin
+			encCntr <= (encCntEn) ? encCntr + 3'h1 : 3'h0;
+			encCntEn <= (encCntEn & (&encCntr)) ? 1'b0 : encCntEn;
+			encScanEn <= (&encCntr) ? 1'b1 : 1'b0;
+		end
+	end
+end
+
+/*always @(posedge rst or posedge encScanEn) begin
+	
+end*/
+
 intOsc InternOsc ( .oscena(1'b1), .osc(kbClk));
 
 // Делитель частоты для частоты сканирования клавиатуры
 FreqDivider #( .DIVIDE_COEFF(5500), .CNTR_WIDTH(13)) FreqDevdr ( .enable(1), .clk(kbClk), .rst(rst), .clk_out(keyClkScan));
 
 endmodule
-
-//assign keyEventReady = keyEvent[6] | keyEvent[7];		// Установка флага события
-// Опрос клавиатуры
-/*ButtonReader Key0 ( .rst(rst), .clk(clk), .keyState(keysState[0]), .keyNum(0), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key1 ( .rst(rst), .clk(clk), .keyState(keysState[1]), .keyNum(1), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key2 ( .rst(rst), .clk(clk), .keyState(keysState[2]), .keyNum(2), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key3 ( .rst(rst), .clk(clk), .keyState(keysState[3]), .keyNum(3), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key4 ( .rst(rst), .clk(clk), .keyState(keysState[4]), .keyNum(4), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key5 ( .rst(rst), .clk(clk), .keyState(keysState[5]), .keyNum(5), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key6 ( .rst(rst), .clk(clk), .keyState(keysState[6]), .keyNum(6), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key7 ( .rst(rst), .clk(clk), .keyState(keysState[7]), .keyNum(7), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key8 ( .rst(rst), .clk(clk), .keyState(keysState[8]), .keyNum(8), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key9 ( .rst(rst), .clk(clk), .keyState(keysState[9]), .keyNum(9), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-
-ButtonReader Key10 ( .rst(rst), .clk(clk), .keyState(keysState[10]), .keyNum(10), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key11 ( .rst(rst), .clk(clk), .keyState(keysState[11]), .keyNum(11), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key12 ( .rst(rst), .clk(clk), .keyState(keysState[12]), .keyNum(12), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key13 ( .rst(rst), .clk(clk), .keyState(keysState[13]), .keyNum(13), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key14 ( .rst(rst), .clk(clk), .keyState(keysState[14]), .keyNum(14), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key15 ( .rst(rst), .clk(clk), .keyState(keysState[15]), .keyNum(15), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key16 ( .rst(rst), .clk(clk), .keyState(keysState[16]), .keyNum(16), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key17 ( .rst(rst), .clk(clk), .keyState(keysState[17]), .keyNum(17), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key18 ( .rst(rst), .clk(clk), .keyState(keysState[18]), .keyNum(18), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key19 ( .rst(rst), .clk(clk), .keyState(keysState[19]), .keyNum(19), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-
-ButtonReader Key20 ( .rst(rst), .clk(clk), .keyState(keysState[20]), .keyNum(20), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key21 ( .rst(rst), .clk(clk), .keyState(keysState[21]), .keyNum(21), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader Key22 ( .rst(rst), .clk(clk), .keyState(keysState[22]), .keyNum(22), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-
-ButtonReader EncKey0 ( .rst(rst), .clk(clk), .keyState(encKeys[0]), .keyNum(23), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-EncoderReader Enc0 ( .clk(clk), .rst(rst), .encLineA(encLinesA[0]), .encLineB(encLinesB[0]), .encNum(0), .encRotEvent({keyEvent[7], keyEvent[6]}), .encCode(keyEvent[5:0]));
-
-ButtonReader EncKey1 ( .rst(rst), .clk(clk), .keyState(encKeys[1]), .keyNum(24), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-EncoderReader Enc1 ( .clk(clk), .rst(rst), .encLineA(encLinesA[1]), .encLineB(encLinesB[1]), .encNum(2), .encRotEvent({keyEvent[7], keyEvent[6]}), .encCode(keyEvent[5:0]));
-
-ButtonReader EncKey2 ( .rst(rst), .clk(clk), .keyState(encKeys[2]), .keyNum(25), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-EncoderReader Enc2 ( .clk(clk), .rst(rst), .encLineA(encLinesA[2]), .encLineB(encLinesB[2]), .encNum(4), .encRotEvent({keyEvent[7], keyEvent[6]}), .encCode(keyEvent[5:0]));
-
-ButtonReader EncKey3 ( .rst(rst), .clk(clk), .keyState(encKeys[3]), .keyNum(26), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-EncoderReader Enc3 ( .clk(clk), .rst(rst), .encLineA(encLinesA[3]), .encLineB(encLinesB[3]), .encNum(6), .encRotEvent({keyEvent[7], keyEvent[6]}), .encCode(keyEvent[5:0]));
-
-ButtonReader JoystKeyA ( .rst(rst), .clk(clk), .keyState(joystKeys[0]), .keyNum(27), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader JoystKeyB ( .rst(rst), .clk(clk), .keyState(joystKeys[1]), .keyNum(28), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader JoystKeyC ( .rst(rst), .clk(clk), .keyState(joystKeys[2]), .keyNum(29), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader JoystKeyD ( .rst(rst), .clk(clk), .keyState(joystKeys[3]), .keyNum(30), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));
-ButtonReader JoystKeyE ( .rst(rst), .clk(clk), .keyState(joystKeys[4]), .keyNum(31), .keyPressed(keyEvent[6]), .keyReleased(keyEvent[7]), .keyCode(keyEvent[5:0]));*/
 
 // Считыватель состояния кнопки
 /*module ButtonReader
