@@ -13,12 +13,12 @@ module Fifo
 	input wire FifoWr,
 	input wire FifoRd,
 	
-	output wire [3:0] tst,
+	///output wire [3:0] tst,
 	
 	output reg [FIFO_EVENT_WIDTH - 1:0] FifoOutput
 );
 
-assign tst = {FifoWr, FifoRd, rdStrob, wrStrob};
+//assign tst = {FifoWr, FifoRd, rdStrob, wrStrob};
 
 reg [FIFO_EVENT_WIDTH - 1:0] FifoEventsQueue [FIFO_CAPACITY - 1:0];
 reg [FIFO_CAP_WIDTH - 1:0] StartIndx;

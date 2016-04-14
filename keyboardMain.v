@@ -70,10 +70,10 @@ KeyboardReader KeyBoardReadr
 	.keysState(KEY),
 	.joystKeys({JOYE, JOYD, JOYC, JOYB, JOYA}),
 	.encKeys({ENC3K, ENC2K, ENC1K, ENC0K}),
-	.encLinesA({ENC0S, ENC1S, ENC2S, ENC3S}),
-	.encLinesB({ENC0C, ENC1C, ENC2C, ENC3C}),
+	.encLinesA({ENC3S, ENC2S, ENC1S, ENC0S}),
+	.encLinesB({ENC3C, ENC2C, ENC1C, ENC0C}),
 	
-	///.tstWire(TST),
+	//.tstWire(TST),
 	.keyEventReady(KeyBoardEvent),
 	.keyEvent(KeyBoardEvCode)
 );
@@ -97,7 +97,7 @@ end
 Fifo #( .FIFO_EVENT_WIDTH(8), .FIFO_CAP_WIDTH(3), .FIFO_CAPACITY(8)) MyFifo
 (
 	.clk(SCK), .rst(EXT), .FifoClr(FifoClr), .FifoInput(KeyBoardEvCode),
-	.FifoWr(KeyBoardEvent), .FifoRd(FifoReadEn), .tst(TST), .FifoOutput(FifoEvent)
+	.FifoWr(KeyBoardEvent), .FifoRd(FifoReadEn), /*.tst(TST),*/ .FifoOutput(FifoEvent)
 );
 
 // Модуль интерфейса SPI

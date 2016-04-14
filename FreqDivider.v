@@ -25,7 +25,7 @@ always @(posedge clk or posedge rst) begin
 	end
 	else begin
 		if (enable) begin
-			cntr = cntr + 1;
+			cntr = cntr + {{(CNTR_WIDTH - 1){1'b0}}, 1'b1};;
 			if (cntr == DIVIDE_COEFF / 2) begin
 				clk_out <= ~clk_out;
 				cntr <= 0;

@@ -160,3 +160,19 @@ set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[3]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[2]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[1]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEY[0]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ENC0C
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ENC0S
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ENC1C
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ENC1S
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ENC2C
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ENC2S
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ENC3C
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ENC3S
+set_location_assignment PIN_82 -to ENC0C
+set_location_assignment PIN_78 -to ENC0S
+set_location_assignment PIN_77 -to ENC1C
+set_location_assignment PIN_75 -to ENC1S
+set_location_assignment PIN_69 -to ENC2C
+set_location_assignment PIN_67 -to ENC2S
+set_location_assignment PIN_98 -to ENC3C
+set_location_assignment PIN_100 -to ENC3S
