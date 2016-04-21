@@ -31,14 +31,14 @@ module keyboardMain
 	input wire JOYD,
 	input wire JOYE,
 	
-	input wire INT,
+	//input wire INT,
 	input wire EXT,
-	//
-	//input  wire E0IN,
-	//output wire E0OUT,
-	//
-	//input  wire E1IN,
-	//output wire E1OUT,
+	
+	input  wire E0IN,
+	output wire E0OUT,
+	
+	input  wire E1IN,
+	output wire E1OUT,
 	
 	output wire [7:0] LCD_D, //inout
 	output wire LCD_RS,
@@ -49,9 +49,9 @@ module keyboardMain
 	output wire LCD_BL,
 	
 	output wire LED_R,
-	output wire LED_G,
+	output wire LED_G
 	
-	output wire [3:0] TST
+	//output wire [3:0] TST
 );
 
 localparam FIFO_EVENT_WIDTH = 8;		// Разрядность кода события
@@ -65,15 +65,19 @@ wire [7:0] KeyBoardEvCode;		// Код события от клавиатуры
 // Модуль клавиатуры
 KeyboardReader KeyBoardReadr
 (
-	//.clk(keyClk),
+	.clk(SCK),
 	.rst(EXT),
 	.keysState(KEY),
 	.joystKeys({JOYE, JOYD, JOYC, JOYB, JOYA}),
 	.encKeys({ENC3K, ENC2K, ENC1K, ENC0K}),
 	.encLinesA({ENC3S, ENC2S, ENC1S, ENC0S}),
 	.encLinesB({ENC3C, ENC2C, ENC1C, ENC0C}),
+	.e0in(E0IN),
+	.e1in(E1IN),
 	
 	//.tstWire(TST),
+	.e0out(E0OUT),
+	.e1out(E1OUT),
 	.keyEventReady(KeyBoardEvent),
 	.keyEvent(KeyBoardEvCode)
 );
@@ -115,22 +119,12 @@ Display #( .DATA_W(COMM_DATA_WIDTH), .ADDR_W(COMM_ADDR_WIDTH)) MyDisp
 	.dispData(LCD_D), .lcdRs(LCD_RS), .lcdWr(LCD_WR), .lcdRd(LCD_RD), .lcdCs(LCD_CS)
 );
 
-// Внешние линии
-//wire [7:0] ExtLines;
-//assign ExtLines = {4'h0, LED_R, LED_G, LCD_BL, LCD_RES};
-
 // Регистр управления внешними дискретными сигналами
 controlRegister #( .DATA_W(4), .ADDR_W(COMM_ADDR_WIDTH), .ADDR(4'h04)) ControlReg4
 (
 	.rst(EXT), .clk(SCK), .wrEnable(CommReady),
 	.dBus(CommDat[3:0]), .aBus(CommAddr), .out({LED_R, LED_G, LCD_BL, LCD_RES})
 );
-
-// Делитель частоты для частоты сканирования клавиатуры
-/*FreqDivider #( .DIVIDE_COEFF(5500), .CNTR_WIDTH(13)) FreqDevdr ( .enable(1), .clk(kbClk), .rst(EXT), .clk_out(keyClkScan));
-wire kbClk;
-wire keyClkScan;
-intOsc InternOsc ( .oscena(1'b1), .osc(kbClk));*/
 
 //assign TST = {KeyBoardEvent, 1'b0, 1'b0, 1'b0};
 //assign TST[3] = KeyBoardEvent;
