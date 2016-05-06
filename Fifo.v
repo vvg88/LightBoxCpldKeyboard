@@ -8,7 +8,7 @@ module Fifo
 (
 	input wire clk,			// Тактовый сигнал
 	input wire rst,			// Сброс
-	input wire FifoClr,		// Очистить очередь
+	//input wire FifoClr,		// Очистить очередь
 	input wire [FIFO_EVENT_WIDTH - 1:0] FifoInput,	// Вход фифо
 	input wire FifoWr,		// Сигнал записи в фифо
 	input wire FifoRd,		// Сигнал чтения в фифо
@@ -26,8 +26,8 @@ reg [FIFO_CAP_WIDTH - 1:0] EndIndx;												// Индекс конца оче
 reg FifoEmpty;																			// Признак пустого фифо
 
 // Запись/чтение
-always @(posedge rst or posedge FifoClr or posedge clk) begin
-	if (rst | FifoClr) begin
+always @(posedge rst  or posedge clk/*or posedge FifoClr*/) begin
+	if (rst /*| FifoClr*/) begin
 		StartIndx <= {FIFO_CAP_WIDTH{1'b0}};
 		EndIndx <= {FIFO_CAP_WIDTH{1'b0}};
 		FifoEmpty <= 1'b1;
@@ -41,7 +41,7 @@ always @(posedge rst or posedge FifoClr or posedge clk) begin
 			if (rdStrob) begin			// По стробу чтения
 				if (~FifoEmpty) begin	// Если фифо не пусто, считать событие
 					FifoOutput <= FifoEventsQueue[StartIndx];
-					StartIndx = StartIndx + 1;				//{{(FIFO_CAP_WIDTH - 1){1'b0}}, 1'b1};
+					StartIndx = (StartIndx == (FIFO_CAPACITY - 1)) ? {FIFO_CAP_WIDTH{1'b0}} : StartIndx + {{(FIFO_CAP_WIDTH - 1){1'b0}}, 1'b1};				//{{(FIFO_CAP_WIDTH - 1){1'b0}}, 1'b1};
 					FifoEmpty <= (StartIndx == EndIndx) ? 1'b1 : 1'b0;
 				end
 				else begin					// Если фифо пусто, выставить 0
@@ -51,7 +51,7 @@ always @(posedge rst or posedge FifoClr or posedge clk) begin
 			
 			if (wrStrob) begin									// По стробу записи записать событие в фифо
 				FifoEventsQueue[EndIndx] <= FifoInput;
-				EndIndx = EndIndx + 1;
+				EndIndx = (EndIndx == (FIFO_CAPACITY - 1)) ? {FIFO_CAP_WIDTH{1'b0}} : EndIndx + {{(FIFO_CAP_WIDTH - 1){1'b0}}, 1'b1};
 				FifoEmpty <= 1'b0; //FifoEmpty = 1'b0;
 			end
 		//end

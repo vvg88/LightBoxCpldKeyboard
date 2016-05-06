@@ -13,6 +13,8 @@ module Spi
 	
 	input wire [REPLY_WIDTH - 1:0] replyData,		// Данные ответа
 	
+	input wire [1:0] patientButtns,
+	
 	output reg replyEn,			// Строб разрешения передачи ответа
 	output reg sdo,				// Выходная линия данных
 	output wire [COMM_WIDTH - 1:0] commData,		// Код команды
@@ -50,9 +52,11 @@ always @(negedge sck or posedge rst) begin //negedge sck
 				end
 				4'd02: begin				// Принять номер команды в след-их 3-х битах
 				commAdrReg[2] <= sdi;
+				sdo <= patientButtns[1];
 				end
 				4'd03: begin
 				commAdrReg[1] <= sdi;
+				sdo <= patientButtns[0];
 				end
 				4'd04: begin
 				commAdrReg[0] <= sdi;					// Принять последний байт 
@@ -91,10 +95,13 @@ always @(negedge sck or posedge rst) begin //negedge sck
 				commDatReg[0] <= sdi;		// Принять последний бит команды
 				sdo <= 1'b0;
 				commReady <= 1'b1;			// Выставить флаг готовности команды
-				state <= 1'b0;
+				//state <= 1'b0;
 				end
 				
 			endcase
+		end
+		else begin
+			state <= 1'b0;
 		end
 	end
 end

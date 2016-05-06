@@ -11,11 +11,12 @@ module KeyboardReader
 	input wire e0in,					// Входы педали/кнопки пациента
 	input wire e1in,
 	
-	//output wire [3:0] tstWire,
+	output wire [3:0] tstWire,
 	output wire e0out,				// Выходы педали/кнопки пациента
 	output wire e1out,
 	output wire keyEventReady,		// Флаг события нажатия
-	output wire [7:0] keyEvent		// Код события (клавиши)
+	output wire [7:0] keyEvent,	// Код события (клавиши)
+	output wire [1:0] patButtons
 );
 
 wire kbClk;			// Тактовая частота клавиатуры (от внутреннего генератора)
@@ -31,6 +32,7 @@ reg [2:0] keyEvRdyDel;			// Линия задержки флага событи�
 
 assign keyEventReady = keyEvRdyDel[2]; //keyEvRdy | encEventRdy | patButtEv;										// Установка флага события от клавиатуры
 assign keyEvent = (keyEvRdy) ? keyCode : ((encEventRdy) ? encCode : (patButtEv ? butt1evCode : 8'h0));	// Установка кода события (код кнопки или энкодера)
+//assign patButtons = patientButtons;
 
 // Сформировать сигнал события от клавиатуры с задержкой на 2 такта, чтобы не было потери событий
 always @(posedge rst or posedge clk)  begin
@@ -269,15 +271,25 @@ end
 
 wire butt1evFlg /*butt2evFlg*/;		// Событие от кнопки пациента
 wire [7:0] butt1evCode;					// Код события кнопки пациента
+//wire [1:0] patientButtons;
 
 // Модуль кнопки пациента
-PatientButton PatientButt1
+/*PatientButton PatientButt1
 (
 	.rst(rst), .clk(patButtClk), .inLine0(e0in), .inLine1(e1in),
 	.outLine0(e0out), .outLine1(e1out),
-	//.tst(tstWire),
-	.eventFlag(butt1evFlg), .eventCode(butt1evCode)
+	.tst(tstWire),
+	.eventFlag(butt1evFlg), .eventCode(butt1evCode),
+	.patientButtonState(patButtons)
+);*/
 
+PatientButtonNew PatientButt
+(
+	.rst(rst), .clk(patButtClk), .inLine0(e0in), .inLine1(e1in),
+	.outLine0(e0out), .outLine1(e1out),
+	.tst(tstWire),
+	.eventFlag(butt1evFlg), .eventCode(butt1evCode),
+	.patientButtonState(patButtons)
 );
 
 // Флаг события от кнопки пациента

@@ -8,11 +8,12 @@ module PatientButton
 	
 	output wire outLine0,			// Выходная линия данных 1
 	output wire outLine1,			// Выходная линия данных 2
-	//output wire [3:0] tst,
+	output wire [3:0] tst,
 	output reg eventFlag,			// Флаг события
-	output reg [7:0] eventCode		// Код события
+	output reg [7:0] eventCode,	// Код события
+	output reg [1:0] patientButtonState
 );
-//assign tst = {inLine0, readEn, rdBitStrb, bitsReady};
+assign tst = {1'b0, buttConctdFlg, bitsReady, 1'b0};
 
 assign outLine0 = (buttCntr) ? 1'b0 : 1'b1;	// Установить выходные линии
 assign outLine1 = (buttCntr) ? 1'b0 : 1'b1;
@@ -33,7 +34,7 @@ always @(posedge rst or posedge clk) begin
 		scanCntr = (scanCntr == 0) ? 10'd1000 : scanCntr - 10'h1;	// Отсчет 1 мс
 		buttCntr <= (buttCntr) ? buttCntr - 4'h1 : buttCntr;			// Отсчет сканирующего импульса (3 мкс или 8 мкс)
 		if (scanCntr == 0) begin
-			buttCntr <= isButtScan ? 4'h8 : 4'h3;	// Установить счетчик сканир-его имп-са 
+			buttCntr <= isButtScan ? 4'h3 : 4'h8;	// Установить счетчик сканир-его имп-са 
 			isButtScan <= ~isButtScan;					// Уст-ть признак
 		end
 	end
@@ -208,7 +209,7 @@ always @(posedge rst or posedge clk) begin
 end
 
 /* Определение подключения/отключения кнопки или педали */
-/*wire outLines;
+wire outLines;
 assign outLines = outLine0 & outLine1;
 reg [1:0] outLinesBuff;			// Буфер выходных линий (исп-ся для определения фронта сигнала)
 reg [1:0] disconCntr;			// Счетчик фронтов для определения отключения
@@ -223,15 +224,42 @@ always @(posedge rst or posedge clk) begin
 	else begin
 		outLinesBuff = {outLinesBuff[0], outLines};	// Сдвинуть буфер
 		if (bitsReady) begin
-			if (~bitsBuff[4]) begin			// Если биты считаны
+			//if (~bitsBuff[4]) begin			// Если биты считаны
 				buttConctdFlg <= 1'b1;		// Установить признак и сбросить счетчик
 				disconCntr <= 2'h0;
-			end
+			//end
 		end
 		else begin
 			if (~outLinesBuff[0] & outLinesBuff[1]) begin				// Если биты не считывались и был фронт на outLines
 				disconCntr <= disconCntr + 2'h1;								// Инкр-т счетчика
 				buttConctdFlg <= &disconCntr ? 1'b0 : buttConctdFlg;	// Сброс признака подключения, если 3 фронта подряд не приходили данные
+			end
+		end
+	end
+end
+
+/*reg [1:0] outLinesBuff1;			// Буфер выходных линий (исп-ся для определения фронта сигнала)
+reg [1:0] disconCntr1;			// Счетчик фронтов для определения отключения
+reg buttConctdFlg1;				// Признак подключения кнопки/педали
+// Установка/сброс признака подключения
+always @(posedge rst or posedge clk) begin
+	if (rst) begin
+		outLinesBuff1 <= 2'b11;
+		buttConctdFlg1 <= 1'b0;
+		disconCntr1 <= 2'h0;
+	end
+	else begin
+		outLinesBuff1 = {outLinesBuff1[0], outLine1};	// Сдвинуть буфер
+		if (bitsReady) begin
+			if (~bitsBuff1[4]) begin			// Если биты считаны
+				buttConctdFlg1 <= 1'b1;		// Установить признак и сбросить счетчик
+				disconCntr1 <= 2'h0;
+			end
+		end
+		else begin
+			if (~outLinesBuff1[0] & outLinesBuff1[1]) begin				// Если биты не считывались и был фронт на outLines
+				disconCntr1 <= disconCntr1 + 2'h1;								// Инкр-т счетчика
+				buttConctdFlg1 <= &disconCntr1 ? 1'b0 : buttConctdFlg1;	// Сброс признака подключения, если 3 фронта подряд не приходили данные
 			end
 		end
 	end
@@ -255,6 +283,7 @@ always @(posedge rst or posedge clk) begin
 		patButtPrevState1 <= 3'h7;
 		isButtnConct <= 1'b1;
 		isButtnConct1 <= 1'b1;
+		patientButtonState <= 2'b00;
 	end
 	else begin
 		if (bitsReady) begin										// По стробу bitsReady
@@ -267,12 +296,17 @@ always @(posedge rst or posedge clk) begin
 						eventCode[7:6] <= patButtState[0] ? 2'b10 : 2'b01;
 						eventCode[5:0] <= 6'd32;
 						eventFlag <= 1'b1;
+						patientButtonState[0] <= ~patButtState[0];
 					end
 					if (patButtState[1] ^ patButtPrevState[1]) begin
 						eventCode[7:6] <= patButtState[1] ? 2'b10 : 2'b01;
 						eventCode[5:0] <= 6'd33;
 						eventFlag <= 1'b1;
+						patientButtonState[1] <= ~patButtState[1];
 					end
+					/*if (patButtState[1:0] ^ patButtPrevState[1:0]) begin			// Если состояние кнопок изменилось, сформировать соответствующее событие
+						patientButtonState <= ~patButtState[1:0];
+					end*/
 				end
 				else begin											// Если данные пришли от педали
 					//PedalPrevState = PedalState;
@@ -298,6 +332,10 @@ always @(posedge rst or posedge clk) begin
 					end
 				end
 			end
+			/*else begin
+				patButtPrevState <= 3'h7;
+				patButtState <= 3'h7;
+			end*/
 			
 			if (~bitsBuff1[4]) begin						// Если по линии 1 считаны данные
 				patButtPrevState1 = patButtState1;		// Сохранить новое состояние
@@ -308,12 +346,17 @@ always @(posedge rst or posedge clk) begin
 						eventCode[7:6] <= patButtState1[0] ? 2'b10 : 2'b01;
 						eventCode[5:0] <= 6'd32;
 						eventFlag <= 1'b1;
+						patientButtonState[0] <= ~patButtState[0];
 					end
 					if (patButtState1[1] ^ patButtPrevState1[1]) begin
 						eventCode[7:6] <= patButtState1[1] ? 2'b10 : 2'b01;
 						eventCode[5:0] <= 6'd33;
 						eventFlag <= 1'b1;
+						patientButtonState[1] <= ~patButtState[1];
 					end
+					/*if (patButtState1[1:0] ^ patButtPrevState1[1:0]) begin			// Если состояние кнопок изменилось, сформировать соответствующее событие
+						patientButtonState <= ~patButtState1[1:0];
+					end*/
 				end
 				else begin
 					//PedalPrevState = PedalState;
@@ -339,9 +382,19 @@ always @(posedge rst or posedge clk) begin
 					end
 				end
 			end
+			/*else begin
+				patButtState1 <= 3'h7;
+				patButtPrevState1 <= 3'h7;
+			end*/
 		end
 		else begin
 			eventFlag <= eventFlag ? 1'b0 : eventFlag;		// Сбросить флаг события
+			if (~buttConctdFlg) begin
+				patButtPrevState <=  3'h7;
+				patButtState <= 3'h7;
+				patButtState1 <= 3'h7;
+				patButtPrevState1 <= 3'h7;
+			end
 		end
 	end
 end

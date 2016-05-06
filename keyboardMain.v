@@ -49,9 +49,9 @@ module keyboardMain
 	output wire LCD_BL,
 	
 	output wire LED_R,
-	output wire LED_G
+	output wire LED_G,
 	
-	//output wire [3:0] TST
+	output wire [3:0] TST
 );
 
 localparam FIFO_EVENT_WIDTH = 8;		// Разрядность кода события
@@ -75,11 +75,12 @@ KeyboardReader KeyBoardReadr
 	.e0in(E0IN),
 	.e1in(E1IN),
 	
-	//.tstWire(TST),
+	.tstWire(TST),
 	.e0out(E0OUT),
 	.e1out(E1OUT),
 	.keyEventReady(KeyBoardEvent),
-	.keyEvent(KeyBoardEvCode)
+	.keyEvent(KeyBoardEvCode),
+	.patButtons(patButtonsState)
 );
 
 wire [FIFO_EVENT_WIDTH - 1:0] FifoEvent;		// Код события
@@ -87,6 +88,7 @@ wire FifoReadEn;										// Флаг разрешения чтения собы
 wire [COMM_DATA_WIDTH - 1:0] CommDat;			// Данные команды
 wire [COMM_ADDR_WIDTH - 1:0] CommAddr;			// Адрес команды
 wire CommReady;
+wire [1:0] patButtonsState;
 
 // Линия сигнала "Очистить FIFO"
 reg FifoClr;
@@ -98,9 +100,9 @@ always @(posedge CommReady) begin
 end
 //assign FifoClr = ((CommAddr == 1) && (CommDat == 0)) ? 1 : 0;
 
-Fifo #( .FIFO_EVENT_WIDTH(8), .FIFO_CAP_WIDTH(3), .FIFO_CAPACITY(8)) MyFifo
+Fifo #( .FIFO_EVENT_WIDTH(8), .FIFO_CAP_WIDTH(3), .FIFO_CAPACITY(7)) MyFifo
 (
-	.clk(SCK), .rst(EXT), .FifoClr(FifoClr), .FifoInput(KeyBoardEvCode),
+	.clk(SCK), .rst(EXT | FifoClr), /*.FifoClr(FifoClr),*/ .FifoInput(KeyBoardEvCode),
 	.FifoWr(KeyBoardEvent), .FifoRd(FifoReadEn), /*.tst(TST),*/ .FifoOutput(FifoEvent)
 );
 
@@ -108,8 +110,9 @@ Fifo #( .FIFO_EVENT_WIDTH(8), .FIFO_CAP_WIDTH(3), .FIFO_CAPACITY(8)) MyFifo
 Spi #( .REPLY_WIDTH(FIFO_EVENT_WIDTH), .COMM_WIDTH(COMM_DATA_WIDTH), .ADR_WIDTH(COMM_ADDR_WIDTH)) SpiMod
 (
 	.rst(EXT), .sdi(SDI), .sck(SCK), .sel(SEL),
-	.replyData(FifoEvent/*8'h0F*/), .replyEn(FifoReadEn), .sdo(SDO),
-	.commData(CommDat), .commAdr(CommAddr), .commReady(CommReady)
+	.replyData(FifoEvent), .replyEn(FifoReadEn), .sdo(SDO),
+	.commData(CommDat), .commAdr(CommAddr), .commReady(CommReady),
+	.patientButtns(patButtonsState)
 );
 
 // Модуль дисплея

@@ -176,3 +176,8 @@ set_location_assignment PIN_96 -to E0IN
 set_location_assignment PIN_97 -to E0OUT
 set_location_assignment PIN_86 -to E1IN
 set_location_assignment PIN_87 -to E1OUT
+set_location_assignment PIN_95 -to TST[3]
+set_location_assignment PIN_92 -to TST[2]
+set_location_assignment PIN_91 -to TST[1]
+set_location_assignment PIN_89 -to TST[0]
+set_global_assignment -name VERILOG_FILE PatientButtonNew.v
