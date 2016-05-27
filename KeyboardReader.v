@@ -11,7 +11,7 @@ module KeyboardReader
 	input wire e0in,					// Входы педали/кнопки пациента
 	input wire e1in,
 	
-	output wire [3:0] tstWire,
+	//output wire [3:0] tstWire,
 	output wire e0out,				// Выходы педали/кнопки пациента
 	output wire e1out,
 	output wire keyEventReady,		// Флаг события нажатия
@@ -287,7 +287,7 @@ PatientButtonNew PatientButt
 (
 	.rst(rst), .clk(patButtClk), .inLine0(e0in), .inLine1(e1in),
 	.outLine0(e0out), .outLine1(e1out),
-	.tst(tstWire),
+	//.tst(tstWire),
 	.eventFlag(butt1evFlg), .eventCode(butt1evCode),
 	.patientButtonState(patButtons)
 );

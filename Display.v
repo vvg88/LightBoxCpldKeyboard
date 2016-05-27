@@ -10,6 +10,7 @@ module Display
 	input wire [DATA_W - 1:0] commData,		// Данные команды
 	input wire [ADDR_W - 1:0] commAddr,		// Номер команды
 	input wire wrEn,			// Сигнал разрешения записи
+	input wire lcdPwr,		
 	
 	output wire [7:0] dispData,	// Шина данных дисплея
 	output wire lcdRs,				// Сигнал команда/данные
@@ -18,11 +19,11 @@ module Display
 	output wire lcdCs					// Выбор микросхемы
 );
 
-assign lcdWr = (/*commAddr == 2 || commAddr == 3*/csMode) ? wrLine[1] : 1'b1;		// Сигнал записи задержать на 1 такт и только для команд 2 и 3, иначе - 1
-assign dispData = (csMode) ? dispDataLatch : 8'h00;		// Установить шину данных дисплея
-assign lcdRs = (AddrThreeFlg) ? 1'b0 : 1'b1;					// Для команды 3 сбросить сигнал RS
-assign lcdRd = 1;														// RD всегда 1
-assign lcdCs = (csMode) ? csDelLine[2] : 1'b1;				// Сигнал CS устанавливается в 0 по wrEn, а в 1 ставится с задержкой в 2 такта
+assign lcdWr = lcdPwr ? ((csMode) ? wrLine[1] : 1'b1) : 1'b0;					// Сигнал записи задержать на 1 такт и только для команд 2 и 3, иначе - 1
+assign dispData = lcdPwr ? ((csMode) ? dispDataLatch : 8'h00) : 8'h0;		// Установить шину данных дисплея
+assign lcdRs = lcdPwr ? ((AddrThreeFlg) ? 1'b0 : 1'b1) : 1'b0;					// Для команды 3 сбросить сигнал RS
+assign lcdRd = lcdPwr ? 1'b1 : 1'b0;													// RD всегда 1
+assign lcdCs = lcdPwr ? ((csMode) ? csDelLine[2] : 1'b1) : 1'b0;				// Сигнал CS устанавливается в 0 по wrEn, а в 1 ставится с задержкой в 2 такта
 
 reg csMode;						// Сигнал CS
 reg [7:0] dispDataLatch;	// Данные дисплея

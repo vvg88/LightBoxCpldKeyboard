@@ -14,6 +14,7 @@ module Spi
 	input wire [REPLY_WIDTH - 1:0] replyData,		// Данные ответа
 	
 	input wire [1:0] patientButtns,
+	//input wire [7:0] cpldVer,
 	
 	output reg replyEn,			// Строб разрешения передачи ответа
 	output reg sdo,				// Выходная линия данных
@@ -39,6 +40,8 @@ always @(negedge sck or posedge rst) begin //negedge sck
 		sdo <= 1'b0;
 		txEn <= 1'b0;
 		commReady <= 1'b0;
+		commAdrReg <= {ADR_WIDTH{1'b0}};
+		commDatReg <= {COMM_WIDTH{1'b0}};
 	end
 	else begin
 		if (~sel) begin				// Если CS = 0
@@ -48,7 +51,6 @@ always @(negedge sck or posedge rst) begin //negedge sck
 				commReady <= 0;
 				txEn <= sdi;
 				replyEn <= (sdi) ? 1'b0 : 1'b1;
-				//commAdrReg[3] = sdi;
 				end
 				4'd02: begin				// Принять номер команды в след-их 3-х битах
 				commAdrReg[2] <= sdi;
@@ -61,7 +63,7 @@ always @(negedge sck or posedge rst) begin //negedge sck
 				4'd04: begin
 				commAdrReg[0] <= sdi;					// Принять последний байт 
 				replyEn <= 1'b0;
-				sdo <= txEn ? 1'b0 : replyData[7];	// Начать передачу ответа
+				sdo <= txEn ? 1'b0 : replyData[7];	// Начать передачу ответа(commAdrReg == 3'h1 ? cpldVer[7] : 
 				end
 				4'd05: begin
 				commDatReg[7] <= sdi;					// Начать прием кода команды

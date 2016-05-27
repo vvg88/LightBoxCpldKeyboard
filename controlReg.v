@@ -18,7 +18,7 @@ module controlRegister
 	output reg[DATA_W-1:0] out			// Состояние регистра
 );
 
-always @(posedge clk) begin
+always @(posedge rst or posedge clk) begin
 	if(rst) begin
 		out = 0;
 	end

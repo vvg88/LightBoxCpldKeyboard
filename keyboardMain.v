@@ -47,6 +47,7 @@ module keyboardMain
 	output wire LCD_CS,
 	output wire LCD_RES,
 	output wire LCD_BL,
+	output wire LCD_PWR,
 	
 	output wire LED_R,
 	output wire LED_G,
@@ -57,10 +58,14 @@ module keyboardMain
 localparam FIFO_EVENT_WIDTH = 8;		// Разрядность кода события
 localparam COMM_DATA_WIDTH = 8;		// Разрядность шины данных команд
 localparam COMM_ADDR_WIDTH = 3;		// Разрядность шины адреса команд
+localparam CPLD_VERSION = 8'h1;
 
 wire keyClk;						// Тактовая частота сканирования клавиатуры
 wire KeyBoardEvent;				// Флаг события от клавиатуры
 wire [7:0] KeyBoardEvCode;		// Код события от клавиатуры
+wire LcdPwrLine;					// 
+
+assign LCD_PWR = LcdPwrLine;
 
 // Модуль клавиатуры
 KeyboardReader KeyBoardReadr
@@ -75,7 +80,7 @@ KeyboardReader KeyBoardReadr
 	.e0in(E0IN),
 	.e1in(E1IN),
 	
-	.tstWire(TST),
+	//.tstWire(TST),
 	.e0out(E0OUT),
 	.e1out(E1OUT),
 	.keyEventReady(KeyBoardEvent),
@@ -92,18 +97,59 @@ wire [1:0] patButtonsState;
 
 // Линия сигнала "Очистить FIFO"
 reg FifoClr;
-always @(posedge CommReady) begin
-	if ((CommAddr == 1) && (CommDat == 0))
-		FifoClr = 1'b1;
-	else
-		FifoClr = 1'b0;
+reg [1:0] fifoClrCntr;
+reg cpldVerFlg;
+reg [7:0] cpldVerCode;
+always @(posedge EXT or posedge SCK /*CommReady*/) begin
+	if (EXT) begin
+		FifoClr <= 1'b0;
+		fifoClrCntr <= 2'h0;
+		cpldVerCode <= 8'h0;
+		cpldVerFlg <= 1'b0;
+	end
+	else begin
+		if (CommReady && (CommAddr == 1) && (CommDat == 0)) begin
+			fifoClrCntr <= fifoClrCntr + 2'h1;
+			case (fifoClrCntr)
+				/*2'h0: begin
+					fifoClrCntr <= 2'h3;
+				end*/
+				2'h0: begin
+					FifoClr <= 1'b1;
+				end
+				2'h1: begin
+					FifoClr <= 1'b0;
+					cpldVerFlg <= 1'b1;
+					cpldVerCode <= CPLD_VERSION;
+				end
+				2'h2: begin
+					cpldVerFlg <= 1'b1;
+					cpldVerCode <= CPLD_VERSION;
+				end
+				2'h3: begin
+					cpldVerFlg <= 1'b0;
+					cpldVerCode <= 8'h0;
+					fifoClrCntr <= 2'h3;
+				end
+				
+			endcase
+		end
+		else begin
+			fifoClrCntr <= 2'h0;
+		end
+	end
 end
 //assign FifoClr = ((CommAddr == 1) && (CommDat == 0)) ? 1 : 0;
 
+wire fifoWrEv;
+wire [FIFO_EVENT_WIDTH - 1:0] fifoWrCode;
+assign fifoWrEv = cpldVerFlg ? cpldVerFlg : KeyBoardEvent;
+assign fifoWrCode = cpldVerFlg ? cpldVerCode : KeyBoardEvCode;
+
 Fifo #( .FIFO_EVENT_WIDTH(8), .FIFO_CAP_WIDTH(3), .FIFO_CAPACITY(7)) MyFifo
 (
-	.clk(SCK), .rst(EXT | FifoClr), /*.FifoClr(FifoClr),*/ .FifoInput(KeyBoardEvCode),
-	.FifoWr(KeyBoardEvent), .FifoRd(FifoReadEn), /*.tst(TST),*/ .FifoOutput(FifoEvent)
+	.clk(SCK), .rst(EXT | FifoClr), /*.FifoClr(FifoClr),*/ .FifoInput(fifoWrCode),
+	.FifoWr(fifoWrEv), .FifoRd(FifoReadEn), /*.tst(TST),*/ .FifoOutput(FifoEvent)
 );
 
 // Модуль интерфейса SPI
@@ -113,23 +159,24 @@ Spi #( .REPLY_WIDTH(FIFO_EVENT_WIDTH), .COMM_WIDTH(COMM_DATA_WIDTH), .ADR_WIDTH(
 	.replyData(FifoEvent), .replyEn(FifoReadEn), .sdo(SDO),
 	.commData(CommDat), .commAdr(CommAddr), .commReady(CommReady),
 	.patientButtns(patButtonsState)
+	//.cpldVer(8'h1)
 );
 
 // Модуль дисплея
 Display #( .DATA_W(COMM_DATA_WIDTH), .ADDR_W(COMM_ADDR_WIDTH)) MyDisp
 (
-	.clk(SCK), .rst(EXT), .commData(CommDat), .commAddr(CommAddr), .wrEn(CommReady),
+	.clk(SCK), .rst(EXT), .commData(CommDat), .commAddr(CommAddr), .wrEn(CommReady), .lcdPwr(LcdPwrLine),
 	.dispData(LCD_D), .lcdRs(LCD_RS), .lcdWr(LCD_WR), .lcdRd(LCD_RD), .lcdCs(LCD_CS)
 );
 
 // Регистр управления внешними дискретными сигналами
-controlRegister #( .DATA_W(4), .ADDR_W(COMM_ADDR_WIDTH), .ADDR(4'h04)) ControlReg4
+controlRegister #( .DATA_W(5), .ADDR_W(COMM_ADDR_WIDTH), .ADDR(4'h04)) ControlReg4
 (
 	.rst(EXT), .clk(SCK), .wrEnable(CommReady),
-	.dBus(CommDat[3:0]), .aBus(CommAddr), .out({LED_R, LED_G, LCD_BL, LCD_RES})
+	.dBus(CommDat[4:0]), .aBus(CommAddr), .out({LcdPwrLine, LED_R, LED_G, LCD_BL, LCD_RES})
 );
 
-//assign TST = {KeyBoardEvent, 1'b0, 1'b0, 1'b0};
+assign TST = {cpldVerFlg, cpldVerCode[0], fifoWrEv, 1'b0};
 //assign TST[3] = KeyBoardEvent;
 
 endmodule

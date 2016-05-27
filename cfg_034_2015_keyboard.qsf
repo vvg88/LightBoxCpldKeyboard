@@ -181,3 +181,4 @@ set_location_assignment PIN_92 -to TST[2]
 set_location_assignment PIN_91 -to TST[1]
 set_location_assignment PIN_89 -to TST[0]
 set_global_assignment -name VERILOG_FILE PatientButtonNew.v
+set_location_assignment PIN_8 -to LCD_PWR
