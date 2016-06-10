@@ -169,11 +169,14 @@ Display #( .DATA_W(COMM_DATA_WIDTH), .ADDR_W(COMM_ADDR_WIDTH)) MyDisp
 	.dispData(LCD_D), .lcdRs(LCD_RS), .lcdWr(LCD_WR), .lcdRd(LCD_RD), .lcdCs(LCD_CS)
 );
 
+wire LedRedLine, LedGreenLine;
+assign LED_R = ~LedRedLine;
+assign LED_G = ~LedGreenLine;
 // Регистр управления внешними дискретными сигналами
 controlRegister #( .DATA_W(5), .ADDR_W(COMM_ADDR_WIDTH), .ADDR(4'h04)) ControlReg4
 (
 	.rst(EXT), .clk(SCK), .wrEnable(CommReady),
-	.dBus(CommDat[4:0]), .aBus(CommAddr), .out({LcdPwrLine, LED_R, LED_G, LCD_BL, LCD_RES})
+	.dBus(CommDat[4:0]), .aBus(CommAddr), .out({LcdPwrLine, LedRedLine, LedGreenLine, LCD_BL, LCD_RES})
 );
 
 assign TST = {cpldVerFlg, cpldVerCode[0], fifoWrEv, 1'b0};
